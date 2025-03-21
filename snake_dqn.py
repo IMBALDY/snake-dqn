@@ -120,6 +120,11 @@ class SnakeGame:
         # 构建状态表示
         head_x, head_y = self.snake[0]
         food_x, food_y = self.food
+        tail_x, tail_y = self.snake[-1]
+        
+        # 计算蛇中点
+        mid_idx = len(self.snake) // 2
+        mid_x, mid_y = self.snake[mid_idx]
         
         # 检查四个方向是否有障碍物（墙或蛇身）
         danger_straight = False
@@ -176,13 +181,23 @@ class SnakeGame:
             food_up,
             food_down,
             
-            # 添加归一化的头部和食物坐标
+            # 蛇头坐标（归一化）
             head_x / GRID_WIDTH,
             head_y / GRID_HEIGHT,
+            
+            # 食物坐标（归一化）
             food_x / GRID_WIDTH,
             food_y / GRID_HEIGHT,
             
-            # 添加蛇的长度（归一化）
+            # 蛇尾坐标（归一化）
+            tail_x / GRID_WIDTH,
+            tail_y / GRID_HEIGHT,
+            
+            # 蛇中点坐标（归一化）
+            mid_x / GRID_WIDTH,
+            mid_y / GRID_HEIGHT,
+            
+            # 蛇的长度（归一化）
             len(self.snake) / (GRID_WIDTH * GRID_HEIGHT)
         ]
         
@@ -271,24 +286,28 @@ class SnakeGame:
 
 # DQN智能体
 class DQNAgent:
-    def __init__(self, state_size, action_size):
+    def __init__(self, state_size=21, action_size=3):
         self.state_size = state_size
         self.action_size = action_size
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
-        # Q网络
-        self.policy_net = DQN(state_size, action_size)
-        self.target_net = DQN(state_size, action_size)
+        # 创建Q网络和目标网络
+        self.policy_net = DQN(state_size, action_size).to(self.device)
+        self.target_net = DQN(state_size, action_size).to(self.device)
         self.target_net.load_state_dict(self.policy_net.state_dict())
         self.target_net.eval()
         
-        # 优化器
+        # 创建优化器
         self.optimizer = optim.Adam(self.policy_net.parameters(), lr=LEARNING_RATE)
         
-        # 经验回放
+        # 创建经验回放内存
         self.memory = ReplayMemory(MEMORY_SIZE)
         
-        # 探索参数
+        # 训练步数计数器
         self.steps_done = 0
+        
+        # 记录最佳得分
+        self.best_score = 0
         
     def select_action(self, state, training=True):
         # epsilon-greedy策略
@@ -300,7 +319,7 @@ class DQNAgent:
             return random.randrange(self.action_size)
         else:
             with torch.no_grad():
-                state_tensor = torch.FloatTensor(state).unsqueeze(0)
+                state_tensor = torch.FloatTensor(state).unsqueeze(0).to(self.device)
                 q_values = self.policy_net(state_tensor)
                 return q_values.max(1)[1].item()
     
@@ -312,11 +331,11 @@ class DQNAgent:
         states, actions, next_states, rewards, dones = self.memory.sample(BATCH_SIZE)
         
         # 转换为张量
-        states = torch.FloatTensor(np.array(states))
-        actions = torch.LongTensor(actions).unsqueeze(1)
-        next_states = torch.FloatTensor(np.array(next_states))
-        rewards = torch.FloatTensor(rewards)
-        dones = torch.FloatTensor(dones)
+        states = torch.FloatTensor(np.array(states)).to(self.device)
+        actions = torch.LongTensor(actions).unsqueeze(1).to(self.device)
+        next_states = torch.FloatTensor(np.array(next_states)).to(self.device)
+        rewards = torch.FloatTensor(rewards).to(self.device)
+        dones = torch.FloatTensor(dones).to(self.device)
         
         # 计算当前Q值
         current_q = self.policy_net(states).gather(1, actions)
@@ -475,14 +494,14 @@ def main():
             print(f'Episode: {episode+1}/{num_episodes}, Score: {env.score}, Avg Score: {avg_score:.2f}, Steps: {step}')
         
         # 保存最佳模型
-        if env.score > best_score:
-            best_score = env.score
+        if env.score > agent.best_score:
+            agent.best_score = env.score
             agent.save('best_snake_model.pth')
-            print(f"新的最佳分数: {best_score}，模型已保存")
+            print(f"新的最佳分数: {agent.best_score}，模型已保存")
         
         # 更新图表（每10轮更新一次，减少性能开销）
         if episode % 10 == 0:
-            update_plot(ax1, ax2, episodes, plot_scores, plot_avg_scores, plot_max, episode, num_episodes, best_score)
+            update_plot(ax1, ax2, episodes, plot_scores, plot_avg_scores, plot_max, episode, num_episodes, agent.best_score)
             # 保存当前图表
             if episode % 1000 == 0 and episode > 0:
                 plt.savefig(f"{stats_dir}/training_progress_{episode}.png")
@@ -491,7 +510,7 @@ def main():
     agent.save('final_snake_model.pth')
     plt.savefig(f"{stats_dir}/final_training_progress.png")
     print(f"训练完成！最终模型已保存到 'final_snake_model.pth'")
-    print(f"最高分数: {best_score}")
+    print(f"最高分数: {agent.best_score}")
     print(f"训练进度图表已保存到 {stats_dir}/final_training_progress.png")
     
     # 关闭图表的交互模式
