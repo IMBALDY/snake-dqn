@@ -1,9 +1,13 @@
+# Byte-compiled / optimized / DLL files
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
 .Python
-env/
 build/
 develop-eggs/
 dist/
@@ -15,16 +19,44 @@ lib64/
 parts/
 sdist/
 var/
+wheels/
+share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+MANIFEST
+
+# Virtual environment
 .env
 .venv
+env/
 venv/
 ENV/
+env.bak/
+venv.bak/
+
+# IDE
 .idea/
 .vscode/
+.spyderproject
+.spyproject
+
+# Logs and databases
 *.log
 .DS_Store
+db.sqlite3
+db.sqlite3-journal
+
+# Project specific
 stats/
-.specstory/ 
+.specstory/
+
+# Cache and temp files
+.cache
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.pytype/
