@@ -184,7 +184,7 @@ DQN网络使用三层全连接神经网络：
 ## 📬 联系方式
 
 - GitHub: [imbaldy](https://github.com/imbaldy)
-- Email: 18152367680@163.com
+- Email: 873312124@qq.com
 
 ---
 
