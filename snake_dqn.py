@@ -17,7 +17,10 @@ import argparse  # 添加命令行参数解析
 # 解析命令行参数
 def parse_args():
     parser = argparse.ArgumentParser(description='Snake DQN Training')
-    parser.add_argument('--render', action='store_true', help='启用训练过程渲染', default=True)
+    render_group = parser.add_mutually_exclusive_group()
+    render_group.add_argument('--render', dest='render', action='store_true', help='启用训练过程渲染')
+    render_group.add_argument('--no-render', dest='render', action='store_false', help='关闭训练过程渲染')
+    parser.set_defaults(render=True)
     parser.add_argument('--render_freq', type=int, default=1, help='渲染频率（每多少回合渲染一次）')
     parser.add_argument('--fps', type=int, default=2000, help='训练时的FPS（帧率）')
     parser.add_argument('--episodes', type=int, default=10000, help='训练回合数')
@@ -286,7 +289,7 @@ class SnakeGame:
 
 # DQN智能体
 class DQNAgent:
-    def __init__(self, state_size=21, action_size=3):
+    def __init__(self, state_size=20, action_size=3):
         self.state_size = state_size
         self.action_size = action_size
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -353,7 +356,8 @@ class DQNAgent:
         loss.backward()
         # 梯度裁剪，防止梯度爆炸
         for param in self.policy_net.parameters():
-            param.grad.data.clamp_(-1, 1)
+            if param.grad is not None:
+                param.grad.data.clamp_(-1, 1)
         self.optimizer.step()
         
         return loss.item()
@@ -369,7 +373,7 @@ class DQNAgent:
         }, path)
     
     def load(self, path):
-        checkpoint = torch.load(path)
+        checkpoint = torch.load(path, map_location=self.device)
         self.policy_net.load_state_dict(checkpoint['policy_net'])
         self.target_net.load_state_dict(checkpoint['target_net'])
         self.optimizer.load_state_dict(checkpoint['optimizer'])
@@ -380,10 +384,16 @@ def main():
     # 解析命令行参数
     args = parse_args()
     
+    # 渲染设置
+    render_training = args.render  # 通过命令行参数控制是否渲染
+    render_frequency = args.render_freq  # 通过命令行参数控制渲染频率
+
     # 初始化pygame
     pygame.init()
-    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-    pygame.display.set_caption('Snake DQN')
+    screen = None
+    if render_training:
+        screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+        pygame.display.set_caption('Snake DQN')
     clock = pygame.time.Clock()
     
     # 设置FPS（可通过命令行参数修改）
@@ -400,10 +410,6 @@ def main():
     # 训练参数
     num_episodes = args.episodes
     max_steps = 2000
-    
-    # 渲染设置
-    render_training = args.render  # 通过命令行参数控制是否渲染
-    render_frequency = args.render_freq  # 通过命令行参数控制渲染频率
     
     # 记录训练进度
     scores = []
@@ -435,7 +441,7 @@ def main():
     plot_avg_scores = []
     plot_max = 0
     
-    print("开始训练10000轮...")
+    print(f"开始训练{num_episodes}轮...")
     
     # 训练循环
     for episode in range(num_episodes):
@@ -446,11 +452,12 @@ def main():
         
         while not done and step < max_steps:
             # 处理事件
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    plt.close()
-                    return
+            if render_training:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                        plt.close()
+                        return
             
             # 选择动作
             action = agent.select_action(state)
@@ -470,7 +477,7 @@ def main():
             step += 1
             
             # 渲染游戏画面（如果启用）
-            if render_training and episode % render_frequency == 0:
+            if render_training and screen is not None and episode % render_frequency == 0:
                 env.render(screen)
                 clock.tick(training_fps)
         
@@ -517,22 +524,23 @@ def main():
     plt.ioff()
     plt.close()
     
-    # 训练完成后，让用户选择是否要测试模型
-    pygame.display.set_caption('Training Completed - Press Any Key to Continue')
-    waiting = True
-    while waiting:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                waiting = False
-            elif event.type == pygame.KEYDOWN:
-                waiting = False
-                # 运行测试脚本
-                print("开始测试模型...")
-                try:
-                    import test_snake_model
-                    test_snake_model.main()
-                except ImportError:
-                    print("找不到测试脚本，请手动运行 'python test_snake_model.py'")
+    # 训练完成后，如果有渲染窗口，让用户选择是否要测试模型
+    if render_training:
+        pygame.display.set_caption('Training Completed - Press Any Key to Continue')
+        waiting = True
+        while waiting:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    waiting = False
+                elif event.type == pygame.KEYDOWN:
+                    waiting = False
+                    # 运行测试脚本
+                    print("开始测试模型...")
+                    try:
+                        import test_snake_model
+                        test_snake_model.main()
+                    except ImportError:
+                        print("找不到测试脚本，请手动运行 'python test_snake_model.py'")
     
     pygame.quit()
 
@@ -563,4 +571,4 @@ def update_plot(ax1, ax2, episodes, scores, avg_scores, plot_max, current_episod
     plt.pause(0.001)  # 短暂暂停以更新图表
 
 if __name__ == '__main__':
-    main() 
+    main()

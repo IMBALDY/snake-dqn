@@ -12,10 +12,14 @@ import argparse
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Snake DQN Reinforcement Learning Trainer')
-    parser.add_argument('--render', action='store_true', help='启用训练过程渲染', default=True)
+    render_group = parser.add_mutually_exclusive_group()
+    render_group.add_argument('--render', dest='render', action='store_true', help='启用训练过程渲染')
+    render_group.add_argument('--no-render', dest='render', action='store_false', help='关闭训练过程渲染')
+    parser.set_defaults(render=True)
     parser.add_argument('--render_freq', type=int, default=1, help='渲染频率（每多少回合渲染一次）')
     parser.add_argument('--fps', type=int, default=2000, help='训练时的FPS（帧率），值越大训练越快')
     parser.add_argument('--episodes', type=int, default=10000, help='训练回合数')
+    parser.add_argument('--yes', action='store_true', help='跳过启动前确认，直接开始训练')
     return parser.parse_args()
 
 def main():
@@ -59,13 +63,16 @@ def main():
         return
     
     print("\n准备开始训练...")
-    input("按Enter键开始训练...")
+    if not args.yes:
+        input("按Enter键开始训练...")
     
     try:
         # 构建命令行参数
         cmd = [sys.executable, "snake_dqn.py"]
         if args.render:
             cmd.append("--render")
+        else:
+            cmd.append("--no-render")
         cmd.extend([
             "--render_freq", str(args.render_freq),
             "--fps", str(args.fps),
@@ -86,7 +93,9 @@ def main():
         print("最佳模型已保存为 'best_snake_model.pth'")
         
         # 询问用户是否要测试模型
-        test_model = input("\n是否要测试训练好的模型? (y/n): ").strip().lower()
+        test_model = 'n'
+        if not args.yes:
+            test_model = input("\n是否要测试训练好的模型? (y/n): ").strip().lower()
         if test_model == 'y':
             try:
                 subprocess.run([sys.executable, "test_snake_model.py"], check=True)

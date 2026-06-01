@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="420" viewBox="0 0 720 420" role="img" aria-labelledby="title desc">
+  <title id="title">Snake DQN demo illustration</title>
+  <desc id="desc">A lightweight illustration of a snake moving toward food on a grid, with a small DQN panel.</desc>
+  <defs>
+    <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse">
+      <path d="M 24 0 L 0 0 0 24" fill="none" stroke="#D8E2DC" stroke-width="1"/>
+    </pattern>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#0F172A" flood-opacity="0.16"/>
+    </filter>
+  </defs>
+
+  <rect width="720" height="420" rx="18" fill="#F8FAFC"/>
+  <rect x="36" y="36" width="420" height="348" rx="10" fill="#FFFFFF" filter="url(#shadow)"/>
+  <rect x="60" y="60" width="372" height="300" fill="url(#grid)"/>
+
+  <rect x="324" y="180" width="24" height="24" rx="5" fill="#EF4444"/>
+  <circle cx="336" cy="192" r="4" fill="#FCA5A5"/>
+
+  <rect x="156" y="180" width="24" height="24" rx="6" fill="#16A34A"/>
+  <rect x="180" y="180" width="24" height="24" rx="6" fill="#22C55E"/>
+  <rect x="204" y="180" width="24" height="24" rx="6" fill="#22C55E"/>
+  <rect x="228" y="180" width="24" height="24" rx="6" fill="#22C55E"/>
+  <rect x="252" y="180" width="24" height="24" rx="6" fill="#22C55E"/>
+  <rect x="276" y="180" width="24" height="24" rx="6" fill="#22C55E"/>
+  <circle cx="294" cy="188" r="2.8" fill="#ECFDF5"/>
+  <circle cx="294" cy="196" r="2.8" fill="#ECFDF5"/>
+
+  <path d="M 312 192 L 330 192" stroke="#0F766E" stroke-width="4" stroke-linecap="round" stroke-dasharray="5 7"/>
+  <path d="M 339 192 l -10 -7 v14 z" fill="#0F766E"/>
+
+  <rect x="492" y="62" width="180" height="296" rx="10" fill="#FFFFFF" filter="url(#shadow)"/>
+  <text x="522" y="106" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#111827">DQN Agent</text>
+
+  <rect x="522" y="132" width="120" height="34" rx="6" fill="#EEF2FF"/>
+  <text x="540" y="155" font-family="Arial, sans-serif" font-size="15" fill="#3730A3">state: 20</text>
+
+  <rect x="522" y="184" width="120" height="34" rx="6" fill="#ECFDF5"/>
+  <text x="540" y="207" font-family="Arial, sans-serif" font-size="15" fill="#166534">action: right</text>
+
+  <rect x="522" y="236" width="120" height="34" rx="6" fill="#FEF3C7"/>
+  <text x="540" y="259" font-family="Arial, sans-serif" font-size="15" fill="#92400E">reward: +0.1</text>
+
+  <path d="M 582 288 C 552 300 552 330 582 336 C 612 330 612 300 582 288 Z" fill="#DBEAFE"/>
+  <text x="550" y="324" font-family="Arial, sans-serif" font-size="14" fill="#1D4ED8">learn</text>
+</svg>
